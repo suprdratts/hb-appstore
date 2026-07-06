@@ -10,7 +10,6 @@
 
 #include "AppCard.hpp"
 #include "AppDetails.hpp"
-#include "../libs/chesto/src/Grid.hpp"
 #include "Sidebar.hpp"
 
 using namespace Chesto;
@@ -100,9 +99,6 @@ private:
 
 	// list of all the app cards
 	std::vector<AppCard*> appCards;
-
-	// grid container for organizing app card positions
-	Chesto::Grid* appGrid = nullptr;
 
 	// list of pointers to the cards that are currently being shown
 	std::vector<AppCard*> visibleAppCards;

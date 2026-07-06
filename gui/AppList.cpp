@@ -406,9 +406,9 @@ bool AppList::process(InputEvents* event)
 		else if (this->y != 0 && this->highlighted < R)
 			event->wheelScroll = 1;
 
-		if (this->highlighted < (int)this->totalCount && this->elements[this->highlighted] && this->elements[this->highlighted]->elasticCounter == NO_HIGHLIGHT)
+		if (this->highlighted < (int)appCards.size() && appCards[this->highlighted] && appCards[this->highlighted]->elasticCounter == NO_HIGHLIGHT)
 		{
-			this->elements[this->highlighted]->elasticCounter = THICK_HIGHLIGHT;
+			appCards[this->highlighted]->elasticCounter = THICK_HIGHLIGHT;
 			ret |= true;
 		}
 	}
@@ -417,16 +417,8 @@ bool AppList::process(InputEvents* event)
 	if (origHighlight != this->highlighted)
 		ret |= true;
 
-	// TODO: replace below with Grid processing
-	if (touchMode) {
-		ret |= ListElement::process(event);
-	} else {
-		for (auto& elem : elements) {
-			if (elem && elem->tag != TAG_APP_CARD) {
-				ret |= elem->process(event);
-			}
-		}
-	}
+	// TODO: replace with Grid processing (for real)
+	ret |= ListElement::process(event);
 
 	if (needsUpdate)
 		update();
@@ -532,15 +524,7 @@ void AppList::update()
 
 	appCards.clear();
 	
-	if (appGrid == nullptr) {
-		// width calculation: screen width - sidebar - left margin
-		int gridWidth = SCREEN_WIDTH - 140 - 25 - 25;
-		appGrid = createNode<Chesto::Grid>(R, gridWidth, 9, 15);
-		appGrid->position(25, 145);
-		appGrid->touchMode = this->touchMode;
-	} else {
-		appGrid->removeAll();
-	}
+	appCards.clear();
 
 	// the current category value from the sidebar
 	std::string curCategoryValue = sidebar->currentCatValue();
@@ -607,18 +591,15 @@ void AppList::update()
 				continue;
 		}
 
-		// create the AppCard for the package, Grid positions it
-		auto card = std::make_unique<AppCard>(package, this);
-		card->tag = TAG_APP_CARD;
-		card->update();
+		// create the AppCard for the package, Grid positions it? No, reverted grid integration.
+		auto cardPtr = createNode<AppCard>(package, this);
+		cardPtr->tag = TAG_APP_CARD;
+		cardPtr->index = appCards.size();
+		cardPtr->position(25 + (cardPtr->index % R) * (cardPtr->width + 9 * effectiveScale), 145 + (cardPtr->height + 15) * (cardPtr->index / R));
+		cardPtr->update();
 		
-		AppCard* cardPtr = card.get();
 		appCards.push_back(cardPtr);
-		
-		appGrid->addNode(std::move(card));
 	}
-	
-	appGrid->refresh();
 	
 	totalCount = appCards.size();
 
@@ -799,8 +780,8 @@ void AppList::update()
 void AppList::reorient()
 {
 	// remove a highilight if it exists (TODO: extract method, we use this everywehre)
-	if (this->highlighted >= 0 && (size_t)this->highlighted < this->elements.size() && this->elements[this->highlighted])
-		this->elements[this->highlighted]->elasticCounter = NO_HIGHLIGHT;
+	if (this->highlighted >= 0 && (size_t)this->highlighted < appCards.size() && appCards[this->highlighted])
+		appCards[this->highlighted]->elasticCounter = NO_HIGHLIGHT;
 }
 
 void AppList::keyboardInputCallback()
