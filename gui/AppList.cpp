@@ -125,7 +125,7 @@ AppList::AppList(Get* get, Sidebar* sidebar)
 	};
 
 	// keyboard input callback
-	// keyboard->hasRoundedKeys = true;
+	keyboard->hasRoundedKeys = true;
 	keyboard->typeAction = std::bind(&AppList::keyboardInputCallback, this);
 	keyboard->preventEnterAndTab = true;
 	keyboard->width = SCREEN_HEIGHT * effectiveScale - 20;
@@ -486,10 +486,21 @@ bool AppList::sortCompare(const Package& left, const Package& right)
 	return priorityLeft < priorityRight;
 }
 
+void AppList::finishInitialLoad()
+{
+	for (auto& card : appCards)
+	{
+		card->unhide();
+	}
+}
+
 void AppList::update()
 {
 	if (!get)
 		return;
+
+	auto mainDisplay = (MainDisplay*)RootDisplay::mainDisplay;
+	auto isInitialLoad = (mainDisplay->spinner != nullptr);
 
 	auto effectiveScale = getEffectiveScale();
 
@@ -524,8 +535,6 @@ void AppList::update()
 
 	appCards.clear();
 	
-	appCards.clear();
-
 	// the current category value from the sidebar
 	std::string curCategoryValue = sidebar->currentCatValue();
 
@@ -591,14 +600,22 @@ void AppList::update()
 				continue;
 		}
 
-		// create the AppCard for the package, Grid positions it? No, reverted grid integration.
+		// create the AppCard for the package and manually position
+		// TODO: replace with Chesto's Grid
 		auto cardPtr = createNode<AppCard>(package, this);
 		cardPtr->tag = TAG_APP_CARD;
 		cardPtr->index = appCards.size();
 		cardPtr->position(25 + (cardPtr->index % R) * (cardPtr->width + 9 * effectiveScale), 145 + (cardPtr->height + 15) * (cardPtr->index / R));
+		cardPtr->hidden = isInitialLoad; // if first, load, hide until we finish loading
 		cardPtr->update();
-		
+
 		appCards.push_back(cardPtr);
+
+		//  progress callback every 10 apps to prevent the first load spinner from locking up
+		// (first building of each AppCard is uncached, and has to slowly render textures)
+		if (isInitialLoad && cardPtr->index % 10 == 0) {
+			MainDisplay::updateLoader(NULL, 0.5);
+		}
 	}
 	
 	totalCount = appCards.size();

@@ -34,6 +34,7 @@ public:
 	bool process(InputEvents* event);
 	void render(Element* parent);
 	void update();
+	void finishInitialLoad();
 
 	Get* get = NULL;
 	Sidebar* sidebar = NULL;

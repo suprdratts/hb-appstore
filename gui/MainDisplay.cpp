@@ -112,17 +112,23 @@ void MainDisplay::beginInitialLoad()
 {
 	networking_callback = nullptr;
 
+	// set get instance to our applist
+	appList->get = get.get();
+	appList->update();
+	appList->sidebar->addHints();
+
+	// remove spinner after load is done
 	if (spinner)
 	{
 		// remove spinner
 		super::remove(spinner);
 		spinner = nullptr;
-	}
 
-	// set get instance to our applist
-	appList->get = get.get();
-	appList->update();
-	appList->sidebar->addHints();
+		// show all app cards, since we're done loading
+		if (appList) {
+			appList->finishInitialLoad();
+		}
+	}
 }
 
 void MainDisplay::updateGetLocale()
@@ -362,10 +368,7 @@ bool MainDisplay::process(InputEvents* event)
 		return true;
 	}
 
-	// HACK HACK HACK - The below call is causing issue #170. It may be dead code; removing it so immediate development may continue.
-	// However, needsRedraw should be fully investigated at some point.
-	// // if we need a redraw, also update the app list (for resizing events)
-	// // TODO: have a more generalized way to have a view describe what needs redrawing
+	// TODO: thoroughly investigate needsRedraw and intended lifecycle usage
 	// if (needsRedraw)
 	// 	appList->update();
 
