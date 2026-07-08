@@ -123,6 +123,13 @@ int main(int argc, char* argv[])
 		display->mainLoop();
 	}
 
+	// ~MainDisplay() -> ~RootDisplay -> DownloadQueue::quit -> ~DownloadQueue() -> curl_multi_cleanup()
+	// must be called *before* deinit_networking() -> socketExit().
+	// It's *probably* safe to not call deinit_networking() on exception, but that leaks resources
+	// (is it a problem? IDK).
+	display.reset();
+	// TODO catch-all and display a clean abort message or *anything* other than corrupting the stack
+
 	deinit_networking();
 
 	return 0;
